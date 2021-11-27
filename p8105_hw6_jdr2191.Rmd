@@ -18,3 +18,45 @@ birthweight_df =
   mutate(malform = factor(malform, levels = c(0,1))) %>%
   mutate(mrace = factor(mrace, levels = c(1,2,3,4,8)))
 ```
+
+Propose a regression model for birthweight. 
+
+First I am going to investigate the data we have to determine which variables might be appropriate for inclusion. 
+```{r}
+unique(pull(birthweight_df, pnumlbw))
+unique(pull(birthweight_df, pnumsga))
+```
+* All values of pnumlbw (previous number of low birth weight babies) are 0. Will not be an informative variable for inclusion in the model. 
+
+* All values of pnumsga (number of prior small for gestational age babies) are 0. Will not be an informative variable for inclusion in the model. 
+
+At my first pass at a model, I will include variables that I think are most appropriate. 
+```{r model0}
+model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + momage + 
+                  wtgain + malform, data = birthweight_df)
+
+summary(model0)
+```
+Based on these results, it looks like frace, momage and malform are not significant predictors of bwt. I will remove these variables from the next iteration of the model. I will also add additional variables that may be appropriate. 
+
+```{r model1}
+model1 = lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength + 
+                  parity, data = birthweight_df)
+
+summary(model1)
+
+model1 %>%
+  broom::tidy()
+```
+Compare your model to two others:
+
+* One using length at birth and gestational age as predictors (main effects only)
+
+* One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+
+```{r comparison_models}
+model2 = lm(bwt ~ blength + gaweeks, data = birthweight_df)
+model3 = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex +
+                  blength * babysex + bhead * blength * babysex, data = birthweight_df)
+```
+
