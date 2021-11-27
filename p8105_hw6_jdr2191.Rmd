@@ -48,6 +48,20 @@ summary(model1)
 model1 %>%
   broom::tidy()
 ```
+
+Diagnostics
+```{r}
+modelr::add_residuals(birthweight_df, model1)
+
+modelr::add_predictions(birthweight_df, model1)
+
+birthweight_df %>%
+  modelr::add_residuals(model1) %>%
+  modelr::add_predictions(model1) %>%
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point()
+```
+
 Compare your model to two others:
 
 * One using length at birth and gestational age as predictors (main effects only)
