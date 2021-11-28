@@ -33,15 +33,15 @@ unique(pull(birthweight_df, pnumsga))
 
 * All values of pnumsga (number of prior small for gestational age babies) are 0. Will not be an informative variable for inclusion in the model. 
 
-At my first pass at a model, I will include variables that I think are most appropriate. 
+At my first pass at a model, I will include variables that I think are most appropriate based on my existing knowledge about birthweight predictors. 
 
 ```{r model0, message=FALSE}
-model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + momage + 
-                  wtgain + malform, data = birthweight_df)
+model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + babysex + bhead +
+                  blength + parity + momage + wtgain + malform, data = birthweight_df)
 
 summary(model0)
 ```
-Based on these results, it looks like frace, momage and malform are not significant predictors of bwt. I will remove these variables from the next iteration of the model. I will also add additional variables that may be appropriate. 
+Based on these results, it looks like frace, momage, wtgain and malform are not significant predictors of bwt (all have p-values < 0.05). I will remove these variables from the next iteration of the model, and this iteration will be my proposed model for birthweight. 
 
 ```{r model1, message=FALSE}
 model1 = lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength + 
@@ -124,6 +124,8 @@ cv_df2 %>%
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 ```
+
+As seen by the plot, the RMSE for my model (model1) is smaller than the RMSE for the other two models (model2 and model3), indicating that my model is a better fit for the data than these other models.
 
 ## Problem 2
 
