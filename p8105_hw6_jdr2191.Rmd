@@ -62,9 +62,12 @@ birthweight_df %>%
   modelr::add_residuals(model1) %>%
   modelr::add_predictions(model1) %>%
   ggplot(aes(x = pred, y = resid)) +
-  geom_point()
+  geom_point(color = "#21A8BD") +
+  labs(x = "Fitted Values", y = "Residuals") + 
+  ggtitle("Plot of model residuals against fitted values") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) 
 ```
-
 Compare your model to two others:
 
 * One using length at birth and gestational age as predictors (main effects only)
