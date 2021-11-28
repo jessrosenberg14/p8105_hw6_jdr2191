@@ -133,7 +133,7 @@ weather_df =
 ```{r}
 weather_df2 =
 weather_df %>% 
-  modelr::bootstrap(n = 50) %>% 
+  modelr::bootstrap(n = 5000) %>% 
   mutate(
     models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
     glance = map(models, broom::glance),
@@ -154,54 +154,27 @@ wide_weather_df =
     values_from = "estimate"
   ) 
 
+weather_df4 = 
 wide_weather_df %>%
   mutate(logb0b1 = log(Intercept)*log(tmin)) %>%
-  select(.id, r.squared, logb0b1)
+  select(.id, r.squared, logb0b1) 
+
+rsquared_df =
+  weather_df4 %>%
+  ggplot(aes(x = r.squared)) + 
+  geom_density()
+
+log_df =
+  weather_df4 %>%
+  ggplot(aes(x = logb0b1)) + 
+  geom_density()
+
+weather_df5 = 
+  weather_df4 %>%
+  select(r.squared, logb0b1)
+
+sapply(weather_df5, function(x) quantile(x, probs = c(0.025, 0.975))) %>%
+  knitr::kable()
 ```
 
-weather_df3 =
-  weather_df2 %>%
-  group_by(term) %>%
-  mutate(logb0 = if_else(term != "tmin", log(estimate), 0),
-        logb1 = if_else(term == "tmin", log(estimate), 0))
-
-  df %>%
-  mutate(g = if_else(a == 2 | a == 5 | a == 7 | (a == 1 & b == 4), 2,
-               if_else(a == 0 | a == 1 | a == 4 | a == 3 |  c == 4, 3, NA_real_)))
-
-weather_df_intercept =
-  weather_df2 %>%
-  filter(term != "tmin") %>% 
-  mutate(log_b0 = log(estimate)) 
-
-weather_df_tmin = 
-  weather_df2 %>%
-  filter(term == "tmin") %>%
-  mutate(log_b1 = log(estimate))
-  
-weather_df_combined = 
-  merge(weather_df_intercept, weather_df_tmin)
-
-weather_df2 %>% 
-  if("term" = "(Intercept)")
-  mutate(log_b0 = log(estimate) if "term" = (Intercept))))
-    
-    
-  )
-  group_by(term) %>%
-  summarize(log_value = log(estimate)) %>%
-  knitr::kable(digits = 3)
-  
-  group_by(term) %>% 
-  summarize(boot_se = sd(estimate)) %>% 
-  knitr::kable(digits = 3)
-
-    ,
-    results = map(models, broom::glance(r.squared))) %>% 
-  select(results) %>% 
-  unnest(results) 
-  
-  %>% 
-  ggplot(aes(x = estimate)) + geom_density()
-```
 
