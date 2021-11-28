@@ -3,7 +3,7 @@ title: "p8105_hw6_jdr2191"
 output: github_document
 ---
 
-```{r load_libraries}
+```{r load_libraries, message=FALSE}
 library(tidyverse)
 library(purrr)
 library(modelr)
@@ -13,7 +13,7 @@ library(viridis)
 ## Problem 1
 
 Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
-```{r import_bwt_data}
+```{r import_bwt_data, message=FALSE}
 birthweight_df = 
   read_csv("birthweight.csv") %>%
   mutate(babysex = factor(babysex, levels = c(1,2))) %>%
@@ -25,7 +25,7 @@ birthweight_df =
 Propose a regression model for birthweight. 
 
 First I am going to investigate the data we have to determine which variables might be appropriate for inclusion. 
-```{r investigate_bwt}
+```{r investigate_bwt, message=FALSE}
 unique(pull(birthweight_df, pnumlbw))
 unique(pull(birthweight_df, pnumsga))
 ```
@@ -34,7 +34,8 @@ unique(pull(birthweight_df, pnumsga))
 * All values of pnumsga (number of prior small for gestational age babies) are 0. Will not be an informative variable for inclusion in the model. 
 
 At my first pass at a model, I will include variables that I think are most appropriate. 
-```{r model0}
+
+```{r model0, message=FALSE}
 model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + momage + 
                   wtgain + malform, data = birthweight_df)
 
@@ -42,7 +43,7 @@ summary(model0)
 ```
 Based on these results, it looks like frace, momage and malform are not significant predictors of bwt. I will remove these variables from the next iteration of the model. I will also add additional variables that may be appropriate. 
 
-```{r model1}
+```{r model1, message=FALSE}
 model1 = lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength + 
                   parity, data = birthweight_df)
 
@@ -53,7 +54,7 @@ model1 %>%
 ```
 
 Diagnostics
-```{r model_diagnostics}
+```{r model_diagnostics, message=FALSE}
 modelr::add_residuals(birthweight_df, model1)
 
 modelr::add_predictions(birthweight_df, model1)
@@ -68,20 +69,21 @@ birthweight_df %>%
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5)) 
 ```
+
 Compare your model to two others:
 
 * One using length at birth and gestational age as predictors (main effects only)
 
 * One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
 
-```{r comparison_models}
+```{r comparison_models, message=FALSE}
 model2 = lm(bwt ~ blength + gaweeks, data = birthweight_df)
 model3 = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex +
                   blength * babysex + bhead * blength * babysex, data = birthweight_df)
 ```
 
 Make this comparison in terms of the cross-validated prediction error
-```{r model_cv}
+```{r model_cv, message=FALSE}
 cv_df =
   crossv_mc(birthweight_df, 50) %>%
   mutate(
@@ -104,7 +106,7 @@ cv_df %>%
 ```
 
 Look at output
-```{r cv_investigation}
+```{r cv_investigation, message=FALSE}
 cv_df2 %>% 
   select(
     starts_with("rmse")) %>% 
@@ -126,7 +128,7 @@ cv_df2 %>%
 ## Problem 2
 
 Importing weather dataset. 
-```{r import_weather_df}
+```{r import_weather_df, message=FALSE}
 weather_df = 
   rnoaa::meteo_pull_monitors(
     c("USW00094728"),
@@ -141,7 +143,7 @@ weather_df =
 ```
 
 Boostrapping weather dataset. 
-```{r bootstrap_weather_df}
+```{r bootstrap_weather_df, message=FALSE}
 weather_df2 =
 weather_df %>% 
   modelr::bootstrap(n = 5000) %>% 
@@ -172,7 +174,7 @@ wide_weather_df %>%
 ```
 
 Generate plots of R squared and Log(beta0 * beta1)
-```{r weather_df_plots}
+```{r weather_df_plots, message=FALSE}
 weather_df4 %>%
   ggplot(aes(x = r.squared)) + 
   geom_density(color = "#6D58B0", size = 1) +
@@ -192,7 +194,7 @@ weather_df4 %>%
 
 Identify the 2.5% and 97.5% quantiles to provide 95% confidence intervals for R squared and Log (Beta 0 * Beta 1)
 
-```{r 95%_CIs}
+```{r 95%_CIs, message=FALSE}
 weather_df5 = 
   weather_df4 %>%
   select(r.squared, logb0b1)
