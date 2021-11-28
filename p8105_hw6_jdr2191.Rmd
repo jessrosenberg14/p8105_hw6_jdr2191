@@ -114,8 +114,13 @@ cv_df2 %>%
     values_to = "rmse",
     names_prefix = "rmse_") %>% 
   mutate(model = fct_inorder(model)) %>% 
-   ggplot(aes(x = model, y = rmse)) +
-  geom_boxplot()
+    ggplot(aes(x = model, y = rmse, fill = model)) +
+    geom_boxplot() +
+    scale_fill_viridis_d(option = "D") +
+    labs(x = "Model", y = "RMSE", col = "Model") +
+    ggtitle("RMSE Plots for All Models") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 ```
 
 ## Problem 2
