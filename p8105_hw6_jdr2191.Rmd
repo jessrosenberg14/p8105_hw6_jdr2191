@@ -164,10 +164,14 @@ rsquared_df =
   ggplot(aes(x = r.squared)) + 
   geom_density()
 
+rsquared_df
+
 log_df =
   weather_df4 %>%
   ggplot(aes(x = logb0b1)) + 
   geom_density()
+
+log_df
 
 weather_df5 = 
   weather_df4 %>%
