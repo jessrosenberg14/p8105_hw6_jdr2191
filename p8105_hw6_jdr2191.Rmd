@@ -169,18 +169,22 @@ weather_df4 %>%
   ggplot(aes(x = r.squared)) + 
   geom_density(color = "#6D58B0", size = 1) +
   labs(x = "R Squared", y = "Density") +
-  ggtitle("Distribution of R Squared Values for 5000 Bootstrap Samples") +
+  ggtitle("Distribution of R Squared Values for 5,000 Bootstrap Samples") +
+  theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5)) 
 
-rsquared_df
-
-log_df =
-  weather_df4 %>%
+weather_df4 %>%
   ggplot(aes(x = logb0b1)) + 
-  geom_density()
+  geom_density(color = "#6D58B0", size = 1) +
+  labs(x = "Log (Beta 0 * Beta 1)", y = "Density") +
+  ggtitle("Distribution of Log(Beta 0 * Beta 1) for 5,000 Bootstrap Samples") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
 
-log_df
+Identify the 2.5% and 97.5% quantiles to provide 95% confidence intervals for R squared and Log (Beta 0 * Beta 1)
 
+```{r 95%_CIs}
 weather_df5 = 
   weather_df4 %>%
   select(r.squared, logb0b1)
