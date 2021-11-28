@@ -5,6 +5,8 @@ output: github_document
 
 ```{r}
 library(tidyverse)
+library(purrr)
+library(modelr)
 ```
 
 ## Problem 1
@@ -73,6 +75,73 @@ model2 = lm(bwt ~ blength + gaweeks, data = birthweight_df)
 model3 = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex +
                   blength * babysex + bhead * blength * babysex, data = birthweight_df)
 ```
+
+Make this comparison in terms of the cross-validated prediction error
+```{r}
+cv_df =
+  crossv_mc(birthweight_df, 50) %>%
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df2 = 
+cv_df %>%
+  mutate(
+    model1 = map(train, ~lm(bwt ~ delwt + mrace + smoken + gaweeks + 
+                                  ppbmi + babysex + bhead + blength + parity, data = .x)), 
+    model2 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)), 
+    model3 = map(train, ~lm(bwt ~ bhead + blength * babysex * bhead, data = .x))
+  ) %>%
+  mutate(
+    rmse_model1 = map2_dbl(model1, test, ~rmse(model = .x, data = .y)), 
+    rmse_model2 = map2_dbl(model2, test, ~rmse(model = .x, data = .y)),
+    rmse_model3 = map2_dbl(model3, test, ~rmse(model = .x, data = .y))
+  )
+```
+
+Look at output
+```{r}
+cv_df2 %>% 
+  select(
+    starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+   ggplot(aes(x = model, y = rmse)) +
+  geom_boxplot()
+```
+
+
+cv_df %>% 
+  mutate(
+    linear_mod = map(.x = train, ~lm(y ~ x, data = .x)), 
+    smooth_mod = map(.x = train, ~gam(y ~ s(x), data = .x)), 
+    wiggly_mod = map(.x = train, ~gam(y ~ s(x, k = 30), sp = 10e-6, data = .x))
+  ) %>% 
+  mutate(
+    rmse_linear = map2_dbl(.x = linear_mod, .y = test, ~rmse(model = .x, data = .y)), 
+    rmse_smooth = map2_dbl(.x = smooth_mod, .y = test, ~rmse(model = .x, data = .y)),
+    rmse_wiggly = map2_dbl(.x = wiggly_mod, .y = test, ~rmse(model = .x, data = .y))
+  )
+
+mutate(
+    lm_fits = map(.x = data, ~lm(price ~ stars + room_type, data = .x)),
+    lm_results = map(lm_fits, broom::tidy)
+  ) %>%
+
+
+  pivot_longer(cols = contains("model"),
+               names_to = "model",
+               values_to = "fit") %>% 
+  mutate(rmse = map2_dbl(fit, test, rmse))
+
+df.cross %>% 
+  group_by(model) %>% 
+  summarize(mean_rmse = mean(rmse))
+
 
 ## Problem 2
 
