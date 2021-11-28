@@ -133,11 +133,14 @@ weather_df =
 ```{r}
 weather_df2 =
 weather_df %>% 
-  modelr::bootstrap(n = 5000) %>% 
+  modelr::bootstrap(n = 50) %>% 
   mutate(
     models = map(strap, ~ lm(tmax ~ tmin, data = .x)),
-   results = map(models, broom::tidy)) %>%
- unnest(results)
+    glance = map(models, broom::glance),
+    results = map(models, broom::tidy)) %>%
+  unnest(results) %>%
+  unnest(glance, names_repair = "universal") %>%
+  select(strap, .id, models, r.squared, term, estimate)
 
 weather_df3 = 
   weather_df2 %>%
@@ -145,18 +148,15 @@ weather_df3 =
 
 wide_weather_df = 
   weather_df3 %>%
-  select(term, estimate, .id) %>%
+  select(term, estimate, .id, r.squared) %>%
   pivot_wider(
     names_from = "term",
     values_from = "estimate"
   ) 
 
 wide_weather_df %>%
-  mutate(logb0b1 = log(Intercept)*log(tmin))
-
-%>%
-  group_by(".id") %>%
-  summarize(logb0b1 = log(estimate))
+  mutate(logb0b1 = log(Intercept)*log(tmin)) %>%
+  select(.id, r.squared, logb0b1)
 ```
 
 weather_df3 =
