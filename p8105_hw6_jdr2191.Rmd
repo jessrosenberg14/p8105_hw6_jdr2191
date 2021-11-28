@@ -3,16 +3,17 @@ title: "p8105_hw6_jdr2191"
 output: github_document
 ---
 
-```{r}
+```{r load_libraries}
 library(tidyverse)
 library(purrr)
 library(modelr)
+library(viridis)
 ```
 
 ## Problem 1
 
 Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
-```{r import_data}
+```{r import_bwt_data}
 birthweight_df = 
   read_csv("birthweight.csv") %>%
   mutate(babysex = factor(babysex, levels = c(1,2))) %>%
@@ -24,7 +25,7 @@ birthweight_df =
 Propose a regression model for birthweight. 
 
 First I am going to investigate the data we have to determine which variables might be appropriate for inclusion. 
-```{r}
+```{r investigate_bwt}
 unique(pull(birthweight_df, pnumlbw))
 unique(pull(birthweight_df, pnumsga))
 ```
@@ -52,7 +53,7 @@ model1 %>%
 ```
 
 Diagnostics
-```{r}
+```{r model_diagnostics}
 modelr::add_residuals(birthweight_df, model1)
 
 modelr::add_predictions(birthweight_df, model1)
@@ -77,7 +78,7 @@ model3 = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex 
 ```
 
 Make this comparison in terms of the cross-validated prediction error
-```{r}
+```{r model_cv}
 cv_df =
   crossv_mc(birthweight_df, 50) %>%
   mutate(
@@ -100,7 +101,7 @@ cv_df %>%
 ```
 
 Look at output
-```{r}
+```{r cv_investigation}
 cv_df2 %>% 
   select(
     starts_with("rmse")) %>% 
@@ -116,7 +117,8 @@ cv_df2 %>%
 
 ## Problem 2
 
-```{r}
+Importing weather dataset. 
+```{r import_weather_df}
 weather_df = 
   rnoaa::meteo_pull_monitors(
     c("USW00094728"),
@@ -130,7 +132,8 @@ weather_df =
   select(name, id, everything())
 ```
 
-```{r}
+Boostrapping weather dataset. 
+```{r bootstrap_weather_df}
 weather_df2 =
 weather_df %>% 
   modelr::bootstrap(n = 5000) %>% 
@@ -158,11 +161,16 @@ weather_df4 =
 wide_weather_df %>%
   mutate(logb0b1 = log(Intercept)*log(tmin)) %>%
   select(.id, r.squared, logb0b1) 
+```
 
-rsquared_df =
-  weather_df4 %>%
+Generate plots of R squared and Log(beta0 * beta1)
+```{r weather_df_plots}
+weather_df4 %>%
   ggplot(aes(x = r.squared)) + 
-  geom_density()
+  geom_density(color = "#6D58B0", size = 1) +
+  labs(x = "R Squared", y = "Density") +
+  ggtitle("Distribution of R Squared Values for 5000 Bootstrap Samples") +
+  theme(plot.title = element_text(hjust = 0.5)) 
 
 rsquared_df
 
