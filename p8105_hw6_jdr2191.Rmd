@@ -16,7 +16,7 @@ Load and clean the data for regression analysis (i.e. convert numeric to factor 
 ```{r import_bwt_data, message=FALSE}
 birthweight_df = 
   read_csv("birthweight.csv") %>%
-  mutate(babysex = factor(babysex, levels = c(1,2), labels = c("male,", "female"))) %>%
+  mutate(babysex = factor(babysex, levels = c(1,2), labels = c("male", "female"))) %>%
   mutate(frace = factor(frace, levels = c(1,2,3,4,8,9), labels = c("White", "Black",
                         "Asian", "Puerto Rican", "Other", "Unknown"))) %>%
   mutate(malform = factor(malform, levels = c(0,1), labels = c("absent", "present"))) %>%
@@ -42,15 +42,14 @@ At my first pass at a model, I will include variables that I think are most appr
 
 ```{r model0, message=FALSE}
 model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + babysex + bhead +
-                  blength + parity + momage + wtgain + malform, data = birthweight_df)
+                  blength + momage + wtgain + malform, data = birthweight_df)
 
 summary(model0)
 ```
 Based on these results, it looks like frace, momage, wtgain and malform are not significant predictors of bwt (all have p-values < 0.05). I will remove these variables from the next iteration of the model, and this iteration will be my proposed model for birthweight. 
 
 ```{r model1, message=FALSE}
-model1 = lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength + 
-                  parity, data = birthweight_df)
+model1 = lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength, data = birthweight_df)
 
 summary(model1)
 
@@ -68,7 +67,7 @@ birthweight_df %>%
   modelr::add_residuals(model1) %>%
   modelr::add_predictions(model1) %>%
   ggplot(aes(x = pred, y = resid)) +
-  geom_point(color = "#21A8BD") +
+  geom_point(color = "#21A8BD", alpha = 0.5) +
   labs(x = "Fitted Values", y = "Residuals") + 
   ggtitle("Plot of model residuals against fitted values") +
   theme_minimal() +
@@ -83,8 +82,7 @@ Compare your model to two others:
 
 ```{r comparison_models, message=FALSE}
 model2 = lm(bwt ~ blength + gaweeks, data = birthweight_df)
-model3 = lm(bwt ~ bhead + blength + babysex + bhead * blength + bhead * babysex +
-                  blength * babysex + bhead * blength * babysex, data = birthweight_df)
+model3 = lm(bwt ~ bhead * blength * babysex, data = birthweight_df)
 ```
 
 Make this comparison in terms of the cross-validated prediction error
@@ -98,10 +96,9 @@ cv_df =
 cv_df2 = 
 cv_df %>%
   mutate(
-    model1 = map(train, ~lm(bwt ~ delwt + mrace + smoken + gaweeks + 
-                                  ppbmi + babysex + bhead + blength + parity, data = .x)), 
+    model1 = map(train, ~lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength, data = .x)), 
     model2 = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)), 
-    model3 = map(train, ~lm(bwt ~ bhead + blength * babysex * bhead, data = .x))
+    model3 = map(train, ~lm(bwt ~ bhead * blength * babysex, data = .x))
   ) %>%
   mutate(
     rmse_model1 = map2_dbl(model1, test, ~rmse(model = .x, data = .y)), 
@@ -130,7 +127,7 @@ cv_df2 %>%
     theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 ```
 
-As seen by the plot, the RMSE for my model (model1) is smaller than the RMSE for the other two models (model2 and model3), indicating that my model is a better fit for the data than these other models.
+As seen by the plot, the RMSE for my model (model1) is smaller than the RMSE for the other two models (model2 and model3), indicating that my model is a better fit for the data than these other models. Model 2 (the model that does not include interaction terms) has the highest RMSE, indicating that it is the worst fit for the data. 
 
 ## Problem 2
 
@@ -151,6 +148,8 @@ weather_df =
 
 Boostrapping weather dataset. 
 ```{r bootstrap_weather_df, message=FALSE}
+set.seed(10)
+
 weather_df2 =
 weather_df %>% 
   modelr::bootstrap(n = 5000) %>% 
@@ -176,7 +175,7 @@ wide_weather_df =
 
 weather_df4 = 
 wide_weather_df %>%
-  mutate(logb0b1 = log(Intercept)*log(tmin)) %>%
+  mutate(logb0b1 = log(Intercept) + log(tmin)) %>%
   select(.id, r.squared, logb0b1) 
 ```
 
@@ -199,7 +198,10 @@ weather_df4 %>%
   theme(plot.title = element_text(hjust = 0.5)) 
 ```
 
-Identify the 2.5% and 97.5% quantiles to provide 95% confidence intervals for R squared and Log (Beta 0 * Beta 1)
+
+Both plots are roughly normally distributed. The plot of $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$ is centered around 2.01 and the plot of $\hat{r}^{2}$ is centered around 0.91.
+
+Identify the 2.5% and 97.5% quantiles to provide 95% confidence intervals for $\hat{r}^{2}$ and $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$
 
 ```{r 95%_CIs, message=FALSE}
 weather_df5 = 
@@ -209,5 +211,7 @@ weather_df5 =
 sapply(weather_df5, function(x) quantile(x, probs = c(0.025, 0.975))) %>%
   knitr::kable()
 ```
+The 95% CI for $\hat{r}^{2}$ is (0.8938, 0.9275).
 
+The 95% CI for $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$ is (1.9646, 2.0591).
 
