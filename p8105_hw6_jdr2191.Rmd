@@ -16,11 +16,16 @@ Load and clean the data for regression analysis (i.e. convert numeric to factor 
 ```{r import_bwt_data, message=FALSE}
 birthweight_df = 
   read_csv("birthweight.csv") %>%
-  mutate(babysex = factor(babysex, levels = c(1,2))) %>%
-  mutate(frace = factor(frace, levels = c(1,2,3,4,8,9))) %>%
-  mutate(malform = factor(malform, levels = c(0,1))) %>%
-  mutate(mrace = factor(mrace, levels = c(1,2,3,4,8)))
+  mutate(babysex = factor(babysex, levels = c(1,2), labels = c("male,", "female"))) %>%
+  mutate(frace = factor(frace, levels = c(1,2,3,4,8,9), labels = c("White", "Black",
+                        "Asian", "Puerto Rican", "Other", "Unknown"))) %>%
+  mutate(malform = factor(malform, levels = c(0,1), labels = c("absent", "present"))) %>%
+  mutate(mrace = factor(mrace, levels = c(1,2,3,4,8,9), labels = c("White", "Black",
+                        "Asian", "Puerto Rican", "Other", "Unknown")))
+
+colSums(is.na(birthweight_df))
 ```
+There are no missing values in the `birthweight_df` dataset.
 
 Propose a regression model for birthweight. 
 
