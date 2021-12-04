@@ -12,7 +12,7 @@ library(viridis)
 
 ## Problem 1
 
-Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
+**Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).**
 ```{r import_bwt_data, message=FALSE}
 birthweight_df = 
   read_csv("birthweight.csv") %>%
@@ -25,20 +25,25 @@ birthweight_df =
 
 colSums(is.na(birthweight_df))
 ```
-There are no missing values in the `birthweight_df` dataset.
+I converted the following variables from numeric to factors: `babysex`, `frace`, `malform`, 
+and `mrace`.
 
-Propose a regression model for birthweight. 
+There are no missing values (`NA` values) in the `birthweight_df` dataset.
 
-First I am going to investigate the data we have to determine which variables might be appropriate for inclusion. 
+**Propose a regression model for birthweight.** 
+
+To begin, I am going to investigate the data we have to determine which variables might be inappropriate for inclusion. 
 ```{r investigate_bwt, message=FALSE}
 unique(pull(birthweight_df, pnumlbw))
 unique(pull(birthweight_df, pnumsga))
 ```
-* All values of pnumlbw (previous number of low birth weight babies) are 0. Will not be an informative variable for inclusion in the model. 
+* All values of `pnumlbw` (previous number of low birth weight babies) are 0. Will not be an informative variable for inclusion in the model. 
 
-* All values of pnumsga (number of prior small for gestational age babies) are 0. Will not be an informative variable for inclusion in the model. 
+* All values of `pnumsga` (number of prior small for gestational age babies) are 0. Will not be an informative variable for inclusion in the model. 
 
-At my first pass at a model, I will include variables that I think are most appropriate based on my existing knowledge about birthweight predictors. 
+At my first pass at a model, I will include variables that I think are most appropriate based on my existing knowledge about birthweight predictors. This includes, `delwt`, `frace`,
+`mrace`, `smoken`, `gaweeks`, `ppbmi`, `babysex`, `bhead`, `blength`, `momage`, `wtgain`,
+and `malform`.
 
 ```{r model0, message=FALSE}
 model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + babysex + bhead +
@@ -46,7 +51,8 @@ model0 = lm(bwt ~ delwt + frace + mrace + smoken + gaweeks + ppbmi + babysex + b
 
 summary(model0)
 ```
-Based on these results, it looks like frace, momage, wtgain and malform are not significant predictors of bwt (all have p-values < 0.05). I will remove these variables from the next iteration of the model, and this iteration will be my proposed model for birthweight. 
+
+In investigating the model's output, it looks like `frace`, `momage`, `wtgain` and `malform` are not significant predictors of `bwt` (all have p-values < 0.05). I will remove these variables from the model, and this updated model  will be my proposed model for `bwt`. 
 
 ```{r model1, message=FALSE}
 model1 = lm(bwt ~ delwt + mrace + smoken + gaweeks + ppbmi + babysex + bhead + blength, data = birthweight_df)
@@ -57,7 +63,9 @@ model1 %>%
   broom::tidy()
 ```
 
-Diagnostics
+As displayed in thie model's output, all of the variables included are significant predictors of `bwt`. Although mother's race: Asian is not significant, the other races are, and due to the nature of the categorical variable, all levels must be included and will remain in my model.
+
+**Show a plot of model residuals against fitted values.** 
 ```{r model_diagnostics, message=FALSE}
 modelr::add_residuals(birthweight_df, model1)
 
@@ -74,19 +82,13 @@ birthweight_df %>%
   theme(plot.title = element_text(hjust = 0.5)) 
 ```
 
-Compare your model to two others:
+**Compare your model to two others in terms of the cross-validated prediction error**
 
 * One using length at birth and gestational age as predictors (main effects only)
 
 * One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
 
-```{r comparison_models, message=FALSE}
-model2 = lm(bwt ~ blength + gaweeks, data = birthweight_df)
-model3 = lm(bwt ~ bhead * blength * babysex, data = birthweight_df)
-```
-
-Make this comparison in terms of the cross-validated prediction error
-```{r model_cv, message=FALSE}
+```{r model_comparisons, message=FALSE}
 cv_df =
   crossv_mc(birthweight_df, 50) %>%
   mutate(
@@ -105,10 +107,7 @@ cv_df %>%
     rmse_model2 = map2_dbl(model2, test, ~rmse(model = .x, data = .y)),
     rmse_model3 = map2_dbl(model3, test, ~rmse(model = .x, data = .y))
   )
-```
 
-Look at output
-```{r cv_investigation, message=FALSE}
 cv_df2 %>% 
   select(
     starts_with("rmse")) %>% 
@@ -127,11 +126,11 @@ cv_df2 %>%
     theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 ```
 
-As seen by the plot, the RMSE for my model (model1) is smaller than the RMSE for the other two models (model2 and model3), indicating that my model is a better fit for the data than these other models. Model 2 (the model that does not include interaction terms) has the highest RMSE, indicating that it is the worst fit for the data. 
+As seen by the plot, the RMSE for my model (model1) is smaller than the RMSE for the other two models (model2 and model3), indicating that my model is a better fit for the data than these other models. Model 2 (the model that does not include interaction terms) has the highest RMSE, indicating that it is the worst fitting model for the data among the 3 compared. 
 
 ## Problem 2
 
-Importing weather dataset. 
+**Importing weather dataset.** 
 ```{r import_weather_df, message=FALSE}
 weather_df = 
   rnoaa::meteo_pull_monitors(
@@ -145,8 +144,7 @@ weather_df =
     tmax = tmax / 10) %>%
   select(name, id, everything())
 ```
-
-Boostrapping weather dataset. 
+**Use 5000 bootstrap samples and, for each bootstrap sample, produce estimates of $\hat{r}^{2}$ and $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$**
 ```{r bootstrap_weather_df, message=FALSE}
 set.seed(10)
 
@@ -179,7 +177,7 @@ wide_weather_df %>%
   select(.id, r.squared, logb0b1) 
 ```
 
-Generate plots of R squared and Log(beta0 * beta1)
+**Plot the distribution of the estimates.**
 ```{r weather_df_plots, message=FALSE}
 weather_df4 %>%
   ggplot(aes(x = r.squared)) + 
@@ -198,10 +196,9 @@ weather_df4 %>%
   theme(plot.title = element_text(hjust = 0.5)) 
 ```
 
-
 Both plots are roughly normally distributed. The plot of $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$ is centered around 2.01 and the plot of $\hat{r}^{2}$ is centered around 0.91.
 
-Identify the 2.5% and 97.5% quantiles to provide 95% confidence intervals for $\hat{r}^{2}$ and $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$
+**Identify the 2.5% and 97.5% quantiles to provide 95% confidence intervals for $\hat{r}^{2}$ and $\log(\hat{\beta}_{0} * \hat{\beta}_{1})$**
 
 ```{r 95%_CIs, message=FALSE}
 weather_df5 = 
